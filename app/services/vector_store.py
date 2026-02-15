@@ -38,7 +38,7 @@ class VectorStore:
                         )
                     },
                     sparse_vectors_config={
-                        "sparse": SparseVectorParams(modifier=Modifier.IDF)
+                        "sparse": SparseVectorParams()
                     }
                 )
                 logger.info(f"Created hybrid collection: {self.collection_name}")

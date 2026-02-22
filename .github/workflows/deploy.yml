@@ -75,5 +75,19 @@ jobs:
             --version-label "$VERSION_LABEL" \
             --option-settings file:///tmp/eb-env-settings.json
 
-          aws elasticbeanstalk wait environment-updated \
-            --environment-names "$EB_ENV_NAME"
+          # Poll until Ready — aws wait has a hardcoded ~6.5 min limit; EB deploys can take longer
+          echo "Waiting for environment to reach Ready status (up to 20 min)..."
+          for i in $(seq 1 40); do
+            STATUS=$(aws elasticbeanstalk describe-environments \
+              --environment-names "$EB_ENV_NAME" \
+              --query 'Environments[0].Status' \
+              --output text)
+            HEALTH=$(aws elasticbeanstalk describe-environments \
+              --environment-names "$EB_ENV_NAME" \
+              --query 'Environments[0].Health' \
+              --output text)
+            echo "  [$i/40] Status=$STATUS Health=$HEALTH"
+            [ "$STATUS" = "Ready" ] && echo "Deployment successful!" && break
+            [ $i -eq 40 ] && echo "Timed out waiting for environment to be Ready." && exit 1
+            sleep 30
+          done
